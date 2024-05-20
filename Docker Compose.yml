@@ -1,0 +1,67 @@
+version: '3'
+
+services:
+  api-service:
+    build:
+      context: ./api-service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - data-service
+      - kafka
+    networks:
+      my-network:
+        aliases:
+          - api-service
+
+  data-service:
+    ports:
+      - "12312:5000"
+    build:
+      context: ./data-service
+    depends_on:
+      - database
+      - kafka
+    networks:
+      my-network:
+        aliases:
+          - data-service
+
+  database:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      my-network:
+        aliases:
+          - database
+
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_CREATE_TOPICS: "test-topic:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    networks:
+      my-network:
+        aliases:
+          - kafka
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    networks:
+      - my-network
+    ports:
+      - "2181:2181"
+
+volumes:
+  pgdata:
+
+networks:
+  my-network:
